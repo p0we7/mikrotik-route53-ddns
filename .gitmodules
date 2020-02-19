@@ -1,3 +1,6 @@
 [submodule "mikrotik-json-parser"]
 	path = mikrotik-json-parser
 	url = git@github.com:Winand/mikrotik-json-parser.git
+[submodule "route53-dynamic-dns-with-lambda"]
+	path = route53-dynamic-dns-with-lambda
+	url = git@github.com:p0we7/route53-dynamic-dns-with-lambda.git
