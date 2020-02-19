@@ -1,0 +1,3 @@
+[submodule "mikrotik-json-parser"]
+	path = mikrotik-json-parser
+	url = git@github.com:Winand/mikrotik-json-parser.git
