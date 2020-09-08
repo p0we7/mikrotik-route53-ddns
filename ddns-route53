@@ -1,0 +1,47 @@
+:global ddnsserv "https://example.com"
+:global ddnshostname "example.com."
+:global Secret "XXXXXXXXXXXX"
+:global apiKey "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+:global ddnsip
+:global ddnslastip
+:global strdate [/system clock get date]
+:global strtime [/system clock get time]
+:global strsystemname [/system identity get name]
+:global strsystemuptime [/system resource get uptime]
+:global strsystemfreemem [/system resource get free-memory]
+:global strsystemcpuload [/system resource get cpu-load]
+:global ddnssystem ("Version-" . [/system package get system version] )
+
+:global StrToMd5
+/system script run "JParseFunctions"; global JSONLoad; global JSONLoads; global JSONUnload
+
+
+:global ddnsip [ /ip address get [/ip address find interface=pppoe-out1 ] address ]
+
+# Strip the net mask off the IP address
+:for i from=( [:len $ddnsip] - 1) to=0 do={
+    :if ( [:pick $ddnsip $i] = "/") do={ 
+        :set ddnsip [:pick $ddnsip 0 $i]
+       } 
+   }
+
+:local publicip [ /tool fetch ($ddnsserv . "/prod\?mode=get") http-header-fiel="x-api-key:$apiKey" output=user as-value]
+:set publicip ( [$JSONLoads ($publicip->"data")]->"return_message" )
+:local ddnshash [ $StrToMd5 ($ddnsip . $ddnshostname . $Secret) ]
+
+:if ([ :typeof $ddnslastip ] = nil ) do={ :global ddnslastip "0" }
+:if ([ :typeof $ddnsip ] = nil ) do={
+   :log info ("DDNS: No ip address present on pppoe interface, dammit TM.")
+} else={
+  :if ($ddnsip != $ddnslastip) do={
+    :log info ("DDNS: Updating $ddnsip $ddnslastip")
+    :local str "/prod\?mode=set&hostname=$ddnshostname&hash=$ddnshash&internalIp=$ddnsip"
+    /tool fetch ($ddnsserv . $str) http-header-fiel="x-api-key:$apiKey" output=user
+    :log info "DDNS: Sending Email"
+    :global ddnslastip "$ddnsip"
+  } else={ 
+    :log info "DDNS: No update required."
+    }
+   $JSONUnload
+}
